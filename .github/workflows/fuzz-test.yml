@@ -1,0 +1,43 @@
+name: Fuzz Test
+
+on:
+  # Trigger on any pull request
+  pull_request:
+    branches:
+      - '**'
+
+  # Allow manual trigger from the GitHub Actions UI
+  workflow_dispatch:
+
+jobs:
+  fuzzing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go environment
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.22'
+
+      - name: Install dependencies
+        run: |
+          go mod tidy
+          go get github.com/google/go-tpm-tools
+
+      - name: Ensure corpus directory exists
+        run: |
+          if [ ! -d "fuzz/corpus" ]; then
+            mkdir -p fuzz/corpus
+          fi
+
+      - name: Run fuzz tests
+        run: |
+          GOCACHE=$(pwd)/fuzz/corpus go test ./fuzz/fuzzer -fuzz=FuzzTPMSequences -fuzztime=30s
+
+      - name: Upload artifacts 
+        uses: actions/upload-artifact@v3
+        with:
+          name: fuzz-corpus
+          path: fuzz/corpus
