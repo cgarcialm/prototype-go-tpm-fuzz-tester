@@ -34,7 +34,7 @@ jobs:
       # Run fuzz tests inside the Docker container
       - name: Run fuzz tests in Docker container
         run: |
-          docker run --rm -e GOCACHE=$(pwd)/fuzz/corpus my-fuzz-image go test ./fuzz/fuzzer -fuzz=FuzzTPMSequences -fuzztime=30s
+          docker run --rm -e GOCACHE=$(pwd)/fuzz/corpus my-fuzz-image go test -v -fuzz FuzzTPMSequencesStandard ./fuzz/fuzzer -fuzztime=30s
 
       # Upload the fuzz corpus directory as an artifact
       - name: Upload artifacts

@@ -11,6 +11,8 @@ import (
 
 	. "prototype-go-tpm-fuzz-tester/legacy/tpm2"
 
+	// Import the generated SeedData struct from fuzz/proto
+
 	"github.com/google/go-tpm-tools/simulator"
 )
 
@@ -34,7 +36,7 @@ func openTPM(tb testing.TB) io.ReadWriteCloser {
 	return simulator
 }
 
-func FuzzTPMSequences(f *testing.F) {
+func FuzzTPMSequencesStandard(f *testing.F) {
 	// Seed the corpus with sequences of TPM commands.
 	f.Add(TPMCreatePrimaryCmd, TPMGetRandomCmd, 16)
 	f.Add(TPMGetRandomCmd, TPMCreatePrimaryCmd, 32)
@@ -52,6 +54,65 @@ func FuzzTPMSequences(f *testing.F) {
 
 		ctx := &TPMContext{}
 
+		for i, cmd := range cmds {
+			log.Printf("Executing command %d: %d", i, cmd)
+			switch cmd {
+			case TPMCreatePrimaryCmd:
+				err := TPMCreatePrimary(rwc, ctx)
+				if err != nil {
+					t.Errorf("Failed to create TPM object at command %d: %v", i, err)
+					return
+				}
+				log.Printf("Successfully created TPM primary key at command %d", i)
+
+			case TPMGetRandomCmd:
+				err := TPMGetRandom(rwc, numBytes)
+				if err != nil {
+					t.Errorf("Failed to get random bytes at command %d: %v", i, err)
+					return
+				}
+				log.Printf("Successfully obtained random bytes at command %d", i)
+
+			default:
+				log.Printf("Skipping unknown command %d: %d", i, cmd)
+				t.Skip("Unknown command")
+			}
+		}
+	})
+}
+
+func FuzzTPMSequencesWithSeeds(f *testing.F) {
+	// Seed the corpus with sequences from the custom SeedData (just to check parsing)
+	seedData, err := ReadSeedData() // Read the seed data from the prototext file
+	if err != nil {
+		log.Fatalf("Error reading or unmarshaling seed data: %v", err)
+	}
+
+	// Adding the seed data commands and num_bytes to the corpus
+	for i := 0; i < len(seedData.Commands)-1; i++ {
+		// Pair up consecutive commands from the commands list
+		cmd1 := seedData.Commands[i]
+		cmd2 := seedData.Commands[i+1]
+		numBytes := seedData.NumBytes
+
+		// Convert int32 to int (as required by f.Add)
+		f.Add(int(cmd1), int(cmd2), int(numBytes))
+	}
+
+	// Define the fuzzing function
+	f.Fuzz(func(t *testing.T, cmd1 int, cmd2 int, numBytes int) {
+		// Log the commands being tested
+		log.Printf("Fuzzing with commands: cmd1=%d, cmd2=%d, numBytes=%d", cmd1, cmd2, numBytes)
+
+		cmds := []int{cmd1, cmd2}
+
+		// Open TPM simulator for testing
+		rwc := openTPM(t)
+		defer rwc.Close()
+
+		ctx := &TPMContext{}
+
+		// Execute the commands from the seed data
 		for i, cmd := range cmds {
 			log.Printf("Executing command %d: %d", i, cmd)
 			switch cmd {
