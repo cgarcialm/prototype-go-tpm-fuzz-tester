@@ -29,7 +29,7 @@ jobs:
       # Build the Docker image for fuzz testing
       - name: Build Docker image
         run: |
-          docker build -f Dockerfile.fuzz -t my-fuzz-image .
+          docker build -f fuzz/Dockerfile.fuzz -t my-fuzz-image .
     
       # Run fuzz tests inside the Docker container
       - name: Run fuzz tests in Docker container
