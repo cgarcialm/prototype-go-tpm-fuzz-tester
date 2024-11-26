@@ -1,12 +1,9 @@
-name: Fuzz Test
+name: Fuzz Test with Docker
 
 on:
-  # Trigger on any pull request
   pull_request:
     branches:
       - '**'
-
-  # Allow manual trigger from the GitHub Actions UI
   workflow_dispatch:
 
 jobs:
@@ -16,27 +13,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Go environment
-        uses: actions/setup-go@v3
-        with:
-          go-version: '1.22'
-
-      - name: Install dependencies
-        run: |
-          go mod tidy
-          go get github.com/google/go-tpm-tools
-
       - name: Ensure corpus directory exists
         run: |
           if [ ! -d "fuzz/corpus" ]; then
             mkdir -p fuzz/corpus
           fi
 
-      - name: Run fuzz tests
-        run: |
-          GOCACHE=$(pwd)/fuzz/corpus go test ./fuzz/fuzzer -fuzz=FuzzTPMSequences -fuzztime=30s
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      - name: Upload artifacts 
+      - name: Build Docker image
+        run: |
+          docker build -f Dockerfile.fuzz -t my-fuzz-image .
+
+      - name: Run fuzz tests in Docker container
+        run: |
+          docker run --rm -e GOCACHE=/fuzz/corpus my-fuzz-image go test ./fuzz/fuzzer -fuzz=FuzzTPMSequences -fuzztime=30s
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: fuzz-corpus
