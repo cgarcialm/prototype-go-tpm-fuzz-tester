@@ -37,7 +37,7 @@ jobs:
           GOCACHE=$(pwd)/fuzz/corpus go test ./fuzz/fuzzer -fuzz=FuzzTPMSequences -fuzztime=30s
 
       - name: Upload artifacts 
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: fuzz-corpus
           path: fuzz/corpus
