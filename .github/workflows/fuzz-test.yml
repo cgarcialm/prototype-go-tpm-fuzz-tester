@@ -3,33 +3,40 @@ name: Fuzz Test with Docker
 on:
   pull_request:
     branches:
-      - '**'
-  workflow_dispatch:
+      - '**' # Trigger on any pull request.
+  workflow_dispatch: # Manual trigger.
 
 jobs:
   fuzzing:
     runs-on: ubuntu-latest
+
     steps:
+      # Checkout the code from the repository
       - name: Checkout code
         uses: actions/checkout@v2
 
+      # Ensure the corpus directory exists
       - name: Ensure corpus directory exists
         run: |
           if [ ! -d "fuzz/corpus" ]; then
             mkdir -p fuzz/corpus
           fi
 
+      # Set up Docker Buildx for advanced Docker builds
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
+    
+      # Build the Docker image for fuzz testing
       - name: Build Docker image
         run: |
           docker build -f Dockerfile.fuzz -t my-fuzz-image .
-
+    
+      # Run fuzz tests inside the Docker container
       - name: Run fuzz tests in Docker container
         run: |
           docker run --rm -e GOCACHE=/fuzz/corpus my-fuzz-image go test ./fuzz/fuzzer -fuzz=FuzzTPMSequences -fuzztime=30s
 
+      # Upload the fuzz corpus directory as an artifact
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
