@@ -29,12 +29,35 @@ jobs:
     - name: Build Docker image
       run: |
         docker build -f fuzz/Dockerfile.fuzz -t my-fuzz-image .
+    
+        # Save the Docker image as a tarball
+    - name: Save Docker image as artifact
+      run: |
+        docker save my-fuzz-image | gzip > my-fuzz-image.tar.gz
+
+    # Upload the image artifact
+    - name: Upload Docker image artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: my-fuzz-image
+        path: my-fuzz-image.tar.gz
               
   fuzzing:
     runs-on: ubuntu-latest
     needs: common-setup
 
     steps:
+      # Download the Docker image artifact
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: my-fuzz-image
+
+      # Load the Docker image from the artifact
+      - name: Load Docker image
+        run: |
+          gunzip -c my-fuzz-image.tar.gz | docker load
+
       # Run fuzz tests inside the Docker container
       - name: Run fuzz tests in Docker container
         run: |
@@ -52,6 +75,17 @@ jobs:
     needs: common-setup
 
     steps:
+      # Download the Docker image artifact
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: my-fuzz-image
+
+      # Load the Docker image from the artifact
+      - name: Load Docker image
+        run: |
+          gunzip -c my-fuzz-image.tar.gz | docker load
+
       # Run fuzz tests inside the Docker container
       - name: Run fuzz tests in Docker container
         run: |
