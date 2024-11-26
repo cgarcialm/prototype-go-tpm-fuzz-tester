@@ -44,40 +44,8 @@ func FuzzTPMSequencesStandard(f *testing.F) {
 
 	// Define the fuzzing function
 	f.Fuzz(func(t *testing.T, cmd1 int, cmd2 int, numBytes int) {
-		// Log the commands being tested
-		log.Printf("Fuzzing with commands: cmd1=%d, cmd2=%d", cmd1, cmd2)
-
-		cmds := []int{cmd1, cmd2}
-
-		rwc := openTPM(t)
-		defer rwc.Close()
-
-		ctx := &TPMContext{}
-
-		for i, cmd := range cmds {
-			log.Printf("Executing command %d: %d", i, cmd)
-			switch cmd {
-			case TPMCreatePrimaryCmd:
-				err := TPMCreatePrimary(rwc, ctx)
-				if err != nil {
-					t.Errorf("Failed to create TPM object at command %d: %v", i, err)
-					return
-				}
-				log.Printf("Successfully created TPM primary key at command %d", i)
-
-			case TPMGetRandomCmd:
-				err := TPMGetRandom(rwc, numBytes)
-				if err != nil {
-					t.Errorf("Failed to get random bytes at command %d: %v", i, err)
-					return
-				}
-				log.Printf("Successfully obtained random bytes at command %d", i)
-
-			default:
-				log.Printf("Skipping unknown command %d: %d", i, cmd)
-				t.Skip("Unknown command")
-			}
-		}
+		// Call the common fuzz test function
+		runTPMFuzzTest(t, cmd1, cmd2, numBytes)
 	})
 }
 
@@ -101,43 +69,49 @@ func FuzzTPMSequencesWithSeeds(f *testing.F) {
 
 	// Define the fuzzing function
 	f.Fuzz(func(t *testing.T, cmd1 int, cmd2 int, numBytes int) {
-		// Log the commands being tested
-		log.Printf("Fuzzing with commands: cmd1=%d, cmd2=%d, numBytes=%d", cmd1, cmd2, numBytes)
-
-		cmds := []int{cmd1, cmd2}
-
-		// Open TPM simulator for testing
-		rwc := openTPM(t)
-		defer rwc.Close()
-
-		ctx := &TPMContext{}
-
-		// Execute the commands from the seed data
-		for i, cmd := range cmds {
-			log.Printf("Executing command %d: %d", i, cmd)
-			switch cmd {
-			case TPMCreatePrimaryCmd:
-				err := TPMCreatePrimary(rwc, ctx)
-				if err != nil {
-					t.Errorf("Failed to create TPM object at command %d: %v", i, err)
-					return
-				}
-				log.Printf("Successfully created TPM primary key at command %d", i)
-
-			case TPMGetRandomCmd:
-				err := TPMGetRandom(rwc, numBytes)
-				if err != nil {
-					t.Errorf("Failed to get random bytes at command %d: %v", i, err)
-					return
-				}
-				log.Printf("Successfully obtained random bytes at command %d", i)
-
-			default:
-				log.Printf("Skipping unknown command %d: %d", i, cmd)
-				t.Skip("Unknown command")
-			}
-		}
+		// Call the common fuzz test function
+		runTPMFuzzTest(t, cmd1, cmd2, numBytes)
 	})
+}
+
+// runTPMFuzzTest executes the TPM commands based on the input cmd1, cmd2, and numBytes.
+func runTPMFuzzTest(t *testing.T, cmd1 int, cmd2 int, numBytes int) {
+	// Log the commands being tested
+	log.Printf("Fuzzing with commands: cmd1=%d, cmd2=%d, numBytes=%d", cmd1, cmd2, numBytes)
+
+	cmds := []int{cmd1, cmd2}
+
+	// Open TPM simulator for testing
+	rwc := openTPM(t)
+	defer rwc.Close()
+
+	ctx := &TPMContext{}
+
+	// Execute the commands from the seed data
+	for i, cmd := range cmds {
+		log.Printf("Executing command %d: %d", i, cmd)
+		switch cmd {
+		case TPMCreatePrimaryCmd:
+			err := TPMCreatePrimary(rwc, ctx)
+			if err != nil {
+				t.Errorf("Failed to create TPM object at command %d: %v", i, err)
+				return
+			}
+			log.Printf("Successfully created TPM primary key at command %d", i)
+
+		case TPMGetRandomCmd:
+			err := TPMGetRandom(rwc, numBytes)
+			if err != nil {
+				t.Errorf("Failed to get random bytes at command %d: %v", i, err)
+				return
+			}
+			log.Printf("Successfully obtained random bytes at command %d", i)
+
+		default:
+			log.Printf("Skipping unknown command %d: %d", i, cmd)
+			t.Skip("Unknown command")
+		}
+	}
 }
 
 // TPMGetRandom simulates getting random bytes from the TPM.
