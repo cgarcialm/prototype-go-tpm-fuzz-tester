@@ -7,9 +7,9 @@ import (
 	"log"
 	"testing"
 
-	"github.com/google/go-tpm/tpmutil"
+	"prototype-go-tpm-fuzz-tester/tpmutil"
 
-	. "github.com/google/go-tpm/legacy/tpm2"
+	. "prototype-go-tpm-fuzz-tester/legacy/tpm2"
 
 	"github.com/google/go-tpm-tools/simulator"
 )
