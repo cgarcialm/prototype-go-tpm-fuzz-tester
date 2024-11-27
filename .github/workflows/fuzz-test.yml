@@ -105,7 +105,7 @@ jobs:
       # Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v2
-        
+
       # Download reports from the fuzzing job
       - name: Download fuzzing report
         uses: actions/download-artifact@v4
@@ -123,4 +123,4 @@ jobs:
       # Run report generator (process or consolidate reports)
       - name: Process and consolidate reports
         run: |
-          go run ./fuzz/fuzzer/report_generator.go
+          go run ./fuzz/fuzzer/main.go
