@@ -5,6 +5,8 @@ on:
     branches:
       - '**' # Trigger on any pull request.
   workflow_dispatch: # Manual trigger.
+  schedule:
+    - cron: '* * * * *' # Runs every minute
 
 jobs:
   common-setup:
