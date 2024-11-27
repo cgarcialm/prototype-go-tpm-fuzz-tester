@@ -38,15 +38,12 @@ func openTPM(tb testing.TB) io.ReadWriteCloser {
 }
 
 func FuzzTPMSequences(f *testing.F) {
-	// Check environment variable to decide which corpus to use
-	useCustomSeedsStr := os.Getenv("USE_CUSTOM_SEEDS")
-	if useCustomSeedsStr == "" {
-		// Environment variable is not set, log an error and exit
-		log.Fatal("Error: USE_CUSTOM_SEEDS environment variable is not set")
+	// Check the environment variable using the separate function
+	useCustomSeeds, err := checkUseCustomSeedsEnv()
+	if err != nil {
+		// Log the error and exit
+		log.Fatal(err)
 	}
-
-	// Convert the environment variable to boolean
-	useCustomSeeds := useCustomSeedsStr == "true"
 
 	if useCustomSeeds {
 		log.Print("Using custom seeds")
@@ -113,6 +110,17 @@ func FuzzTPMSequences(f *testing.F) {
 			}
 		}
 	})
+}
+
+func checkUseCustomSeedsEnv() (bool, error) {
+	// Check environment variable to decide which corpus to use
+	useCustomSeedsStr := os.Getenv("USE_CUSTOM_SEEDS")
+	if useCustomSeedsStr == "" {
+		return false, fmt.Errorf("USE_CUSTOM_SEEDS environment variable is not set")
+	}
+
+	// Convert the environment variable to boolean
+	return useCustomSeedsStr == "true", nil
 }
 
 // TPMGetRandom simulates getting random bytes from the TPM.
