@@ -61,14 +61,14 @@ jobs:
       # Run fuzz tests inside the Docker container
       - name: Run fuzz tests in Docker container
         run: |
-          docker run --rm -e USE_CUSTOM_SEEDS=false my-fuzz-image go test -v -run ^Fuzz -fuzz ^FuzzTPMSequences$ ./fuzz/fuzzer -fuzztime=30s
+          docker run --rm -e USE_CUSTOM_SEEDS=false my-fuzz-image go test -v -run ^Fuzz -fuzz ^FuzzTPMSequences$ ./fuzz/fuzzer -fuzztime=30s | tee report_fuzzer.txt
 
       # Upload the fuzz corpus directory as an artifact
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: fuzz-corpus
-          path: fuzz/corpus
+          name: fuzz-report
+          path: report_fuzzer.txt
 
   fuzzing_with_seeds:
     runs-on: ubuntu-latest
@@ -89,11 +89,11 @@ jobs:
       # Run fuzz tests inside the Docker container
       - name: Run fuzz tests in Docker container
         run: |
-          docker run --rm -e USE_CUSTOM_SEEDS=true my-fuzz-image go test -v -run ^Fuzz -fuzz ^FuzzTPMSequences$ ./fuzz/fuzzer -fuzztime=30s
+          docker run --rm -e USE_CUSTOM_SEEDS=true my-fuzz-image go test -v -run ^Fuzz -fuzz ^FuzzTPMSequences$ ./fuzz/fuzzer -fuzztime=30s | tee report_custom_inputs.txt
 
       # Upload the fuzz corpus directory as an artifact
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: fuzz-corpus
-          path: fuzz/corpus
+          name: custom-inputs-report
+          path: report_custom_inputs.txt
