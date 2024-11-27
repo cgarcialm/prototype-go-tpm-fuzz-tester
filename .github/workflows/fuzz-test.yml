@@ -6,7 +6,7 @@ on:
       - '**' # Trigger on any pull request.
   workflow_dispatch: # Manual trigger.
   schedule:
-    - cron: '* * * * *' # Runs every minute
+    - cron: '0 0 * * 0' # Runs every Sunday at midnight UTC
 
 jobs:
   common-setup:
