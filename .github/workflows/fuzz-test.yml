@@ -120,11 +120,14 @@ jobs:
           name: custom-inputs-report
           path: ./fuzz/reports
 
-      - name: List directory contents
-        run: |
-          ls -al ./fuzz/reports
-
       # Run report generator (process or consolidate reports)
       - name: Process and consolidate reports
         run: |
           go run ./fuzz/main.go
+
+      # Upload the fuzz corpus directory as an artifact
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: final_report
+          path: final_report.txt
