@@ -119,4 +119,4 @@ jobs:
       # Run report generator (process or consolidate reports)
       - name: Process and consolidate reports
         run: |
-          go run /workspace/fuzz/report_generator.go
+          go run ./fuzz/fuzzer/report_generator.go
