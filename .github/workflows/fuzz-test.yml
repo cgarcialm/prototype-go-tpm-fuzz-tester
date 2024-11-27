@@ -14,11 +14,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
   
-    # Ensure the corpus directory exists
-    - name: Ensure corpus directory exists
+    # Ensure the reports directory exists
+    - name: Ensure reports directory exists
       run: |
-        if [ ! -d "fuzz/corpus" ]; then
-        mkdir -p fuzz/corpus
+        if [ ! -d "fuzz/reports" ]; then
+        mkdir -p fuzz/reports
         fi
   
     # Set up Docker Buildx for advanced Docker builds
@@ -97,3 +97,26 @@ jobs:
         with:
           name: custom-inputs-report
           path: report_custom_inputs.txt
+
+  process-reports:
+    runs-on: ubuntu-latest
+    needs: [fuzzing, fuzzing_with_seeds]
+    steps:
+      # Download reports from the fuzzing job
+      - name: Download fuzzing report
+        uses: actions/download-artifact@v4
+        with:
+          name: fuzz-report
+          path: ./fuzz/reports
+
+      # Download reports from the fuzzing_with_seeds job
+      - name: Download fuzzing_with_seeds report
+        uses: actions/download-artifact@v4
+        with:
+          name: fuzz-report
+          path: ./fuzz/reports
+
+      # Run report generator (process or consolidate reports)
+      - name: Process and consolidate reports
+        run: |
+          go run /workspace/fuzz/report_generator.go
