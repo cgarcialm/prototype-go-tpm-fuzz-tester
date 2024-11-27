@@ -25,3 +25,6 @@ tags
 
 # Generated files
 constants_string.go
+
+# Fuzz corpus
+fuzz/corpus/*

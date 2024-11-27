@@ -1,0 +1,135 @@
+name: Fuzz Test with Docker
+
+on:
+  pull_request:
+    branches:
+      - '**' # Trigger on any pull request.
+  workflow_dispatch: # Manual trigger.
+  schedule:
+    - cron: '0 0 * * 0' # Runs every Sunday at midnight UTC
+
+jobs:
+  common-setup:
+    runs-on: ubuntu-latest
+    steps:
+    # Checkout the code from the repository
+    - name: Checkout code
+      uses: actions/checkout@v2
+  
+    # Ensure the reports directory exists
+    - name: Ensure reports directory exists
+      run: |
+        if [ ! -d "fuzz/reports" ]; then
+        mkdir -p fuzz/reports
+        fi
+  
+    # Set up Docker Buildx for advanced Docker builds
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    # Build the Docker image for fuzz testing
+    - name: Build Docker image
+      run: |
+        docker build -f fuzz/Dockerfile.fuzz -t my-fuzz-image .
+    
+    # Save the Docker image as a tarball
+    - name: Save Docker image as artifact
+      run: |
+        docker save my-fuzz-image | gzip > my-fuzz-image.tar.gz
+
+    # Upload the image artifact
+    - name: Upload Docker image artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: my-fuzz-image
+        path: my-fuzz-image.tar.gz
+              
+  fuzzing:
+    runs-on: ubuntu-latest
+    needs: common-setup
+
+    steps:
+      # Download the Docker image artifact
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: my-fuzz-image
+
+      # Load the Docker image from the artifact
+      - name: Load Docker image
+        run: |
+          gunzip -c my-fuzz-image.tar.gz | docker load
+
+      # Run fuzz tests inside the Docker container
+      - name: Run fuzz tests in Docker container
+        run: |
+          docker run --rm -e USE_CUSTOM_SEEDS=false my-fuzz-image go test -v -run ^Fuzz -fuzz ^FuzzTPMSequences$ ./fuzz/fuzzer -fuzztime=2s | tee report_fuzzer.txt
+
+      # Upload the fuzz corpus directory as an artifact
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-report
+          path: report_fuzzer.txt
+
+  fuzzing-custom-seeds:
+    runs-on: ubuntu-latest
+    needs: common-setup
+
+    steps:
+      # Download the Docker image artifact
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: my-fuzz-image
+
+      # Load the Docker image from the artifact
+      - name: Load Docker image
+        run: |
+          gunzip -c my-fuzz-image.tar.gz | docker load
+
+      # Run fuzz tests inside the Docker container
+      - name: Run fuzz tests in Docker container
+        run: |
+          docker run --rm -e USE_CUSTOM_SEEDS=true my-fuzz-image go test -v -run ^Fuzz -fuzz ^FuzzTPMSequences$ ./fuzz/fuzzer -fuzztime=2s | tee report_custom_inputs.txt
+
+      # Upload the fuzz corpus directory as an artifact
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-inputs-report
+          path: report_custom_inputs.txt
+
+  process-reports:
+    runs-on: ubuntu-latest
+    needs: [fuzzing, fuzzing-custom-seeds]
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Download reports from the fuzzing job
+      - name: Download fuzzing report
+        uses: actions/download-artifact@v4
+        with:
+          name: fuzz-report
+          path: ./fuzz/reports
+
+      # Download reports from the custom-inputs-report job
+      - name: Download fuzzing_with_seeds report
+        uses: actions/download-artifact@v4
+        with:
+          name: custom-inputs-report
+          path: ./fuzz/reports
+
+      # Run report generator (process or consolidate reports)
+      - name: Process and consolidate reports
+        run: |
+          go run ./fuzz/main.go
+
+      # Upload the fuzz corpus directory as an artifact
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: final_report
+          path: final_report.txt

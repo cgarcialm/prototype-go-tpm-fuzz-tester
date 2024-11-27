@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package fuzzer;
+
+option go_package = "prototype-go-tpm-fuzz-tester/fuzzer";
+
+message SeedData {
+  repeated int32 commands = 1;  // Use 'repeated' for lists of values
+  int32 num_bytes = 2;
+}

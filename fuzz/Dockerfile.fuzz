@@ -1,0 +1,14 @@
+# Use the Go base image 
+FROM golang:1.22 as fuzzer
+
+# Install OpenSSL and build dependencies
+RUN apt-get update && apt-get install -y \
+    openssl \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the existing Go binary or application code 
+COPY ./ .
+
+# Copy go.mod and go.sum for dependency management
+COPY go.mod go.sum ./
