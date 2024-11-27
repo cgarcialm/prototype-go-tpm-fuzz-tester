@@ -9,14 +9,14 @@ import (
 // GenerateReport consolidates multiple fuzzing reports into a final one.
 func GenerateReport() error {
 	// Open the first report (fuzzing report)
-	fuzzingReport, err := os.Open("./fuzzing-report/report.txt")
+	fuzzingReport, err := os.Open("./fuzz/reports/report_fuzzer.txt")
 	if err != nil {
 		return fmt.Errorf("failed to open fuzzing report: %v", err)
 	}
 	defer fuzzingReport.Close()
 
 	// Open the second report (fuzzing_with_seeds report)
-	fuzzingWithSeedsReport, err := os.Open("./fuzzing-with-seeds-report/report.txt")
+	fuzzingWithSeedsReport, err := os.Open("./fuzz/reports/report_custom_inputs.txt")
 	if err != nil {
 		return fmt.Errorf("failed to open fuzzing_with_seeds report: %v", err)
 	}
